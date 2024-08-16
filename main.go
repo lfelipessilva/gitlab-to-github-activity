@@ -17,11 +17,26 @@ func runGitCommand(args ...string) error {
 }
 
 func findLastCommmitDate() time.Time {
-	cmd := exec.Command("git", "log", "-1", "--format=%cd")
+	cmd := exec.Command(
+		"git",
+		"-C",
+		"./repo",
+		"log",
+		"-1",
+		"--format=%cd",
+	)
+
 	out, err := cmd.Output()
 
 	if err != nil {
-		log.Printf("Error: %s\n", err)
+		log.Printf("Error finding last commit date: %s\n", err)
+
+		startOfYear3000, err := time.Parse("2006-01-02", "3000-01-01")
+		if err != nil {
+			log.Printf("Error on start of year 3000: %s\n", err)
+		}
+
+		return startOfYear3000
 	}
 
 	commitDateStr := string(out)
@@ -61,12 +76,14 @@ func main() {
 			continue
 		}
 
-		if lastCommmitDate.Before(parsedDate) {
+		if parsedDate.After(lastCommmitDate) {
 			continue
 		}
 
 		for i := 0; i <= value; i++ {
 			err := runGitCommand(
+				"-C",
+				"./repo",
 				"commit",
 				"--date", date+" 12:00:00",
 				"-m", "add contribution",
